@@ -96,3 +96,15 @@ CREATE TABLE IF NOT EXISTS recipe_photo (
     PRIMARY KEY (id),
     FOREIGN KEY (idRecipe) REFERENCES recipe(id) ON DELETE CASCADE
 );
+
+-- ------------------------------------------------------------
+-- Tokens de autenticação (magic link)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS auth_token (
+    id         INT          NOT NULL AUTO_INCREMENT,
+    idUser     INT          NOT NULL,
+    hash       VARCHAR(255) NOT NULL UNIQUE,
+    expires_at DATETIME     NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (idUser) REFERENCES user(id) ON DELETE CASCADE
+);
