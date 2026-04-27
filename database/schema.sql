@@ -62,9 +62,10 @@ CREATE TABLE IF NOT EXISTS recipe (
 CREATE TABLE IF NOT EXISTS tag (
     id     INT         NOT NULL AUTO_INCREMENT,
     idUser INT         NOT NULL,
-    name   VARCHAR(50) NOT NULL UNIQUE,
+    name   VARCHAR(50) NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (idUser) REFERENCES user(id)
+    FOREIGN KEY (idUser) REFERENCES user(id),
+    UNIQUE KEY uq_tag_user_name (idUser, name)
 );
 
 CREATE TABLE IF NOT EXISTS recipe_tag (
