@@ -60,9 +60,11 @@ CREATE TABLE IF NOT EXISTS recipe (
 -- Tags de receitas (ex: vegano, rápido, sobremesa)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tag (
-    id   INT         NOT NULL AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    PRIMARY KEY (id)
+    id     INT         NOT NULL AUTO_INCREMENT,
+    idUser INT         NOT NULL,
+    name   VARCHAR(50) NOT NULL UNIQUE,
+    PRIMARY KEY (id),
+    FOREIGN KEY (idUser) REFERENCES user(id)
 );
 
 CREATE TABLE IF NOT EXISTS recipe_tag (
