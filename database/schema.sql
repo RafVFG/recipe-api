@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS user (
     id         INT           NOT NULL AUTO_INCREMENT,
     name       VARCHAR(100)  NOT NULL,
     email      VARCHAR(150)  NOT NULL UNIQUE,
-    password   VARCHAR(255)  NOT NULL,
     created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 );
@@ -48,7 +47,7 @@ CREATE TABLE IF NOT EXISTS recipe (
     description TEXT          NULL,
     directions  TEXT          NOT NULL,
     rating      DECIMAL(3,2)  NULL,
-    prepTime    VARCHAR(50)   NULL,
+    prepTime    INT UNSIGNED  NULL,
     yields      INT           NULL,
     created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
