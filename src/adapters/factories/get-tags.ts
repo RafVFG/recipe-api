@@ -5,5 +5,6 @@ import { tagListController } from "../controllers/tag/list";
 export function makeGetTags() {
     const repository = tagRepository();
     const useCase = getTags(repository);
-    return tagListController(useCase);
+    const controller = tagListController(useCase);
+    return controller;
 }

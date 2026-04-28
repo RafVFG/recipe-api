@@ -1,9 +1,9 @@
 import { GetTagsMethods } from "../../../use-cases/get-tags/interfaces/methods";
 import { response } from "../interfaces/status-code";
-import { TagHttpRequest, TagHttpResponse } from "./interfaces/http";
+import { HttpRequest, HttpResponse } from "../recipe/interfaces/http";
 
 export function tagListController(getTags: GetTagsMethods) {
-    async function handle(httpRequest: TagHttpRequest): Promise<TagHttpResponse> {
+    async function handle(httpRequest: HttpRequest): Promise<HttpResponse> {
         const res = response();
         try {
             const tags = await getTags.run();

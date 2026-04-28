@@ -1,23 +1,11 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { upload } from "../config/upload";
 import { makeUploadRecipePhoto } from "../../adapters/factories/upload-recipe-photo";
-import { RecipePhotoControllerMethods } from "../../adapters/controllers/recipe-photo/interfaces/methods";
-
-function adaptRoute(controller: RecipePhotoControllerMethods) {
-    return async (req: Request, res: Response) => {
-        const httpRequest = {
-            params: req.params,
-            body: req.body,
-            file: req.file
-        }
-        const httpResponse = await controller.handle(httpRequest);
-        res.status(httpResponse.statusCode).json(httpResponse.body);
-    }
-}
+import { authGuard } from "../config/middleware/auth-guard";
+import { adaptRoute } from "../config/adapt-route";
 
 const uploadPhotoController = makeUploadRecipePhoto();
-const route = adaptRoute(uploadPhotoController);
 
 export default (router: Router): void => {
-    router.post("/recipe/:idRecipe/photo", upload.single("photo"), route)
+    router.post("/recipe/:idRecipe/photo", authGuard, upload.single("photo"), adaptRoute(uploadPhotoController))
 }

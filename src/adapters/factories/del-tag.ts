@@ -5,5 +5,6 @@ import { tagDelController } from "../controllers/tag/del";
 export function makeDelTag() {
     const repository = tagRepository();
     const useCase = delTag(repository);
-    return tagDelController(useCase);
+    const controller = tagDelController(useCase);
+    return controller;
 }

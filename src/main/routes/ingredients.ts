@@ -1,22 +1,16 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { makeCreateOrUpdateIngredient } from "../../adapters/factories/create-ingredient";
 import { makeGetIngredients } from "../../adapters/factories/get-ingredients";
 import { makeDelIngredient } from "../../adapters/factories/del-ingredient";
-
-function adaptRoute(controller: { handle: (req: any) => Promise<any> }) {
-    return async (req: Request, res: Response) => {
-        const httpRequest = { params: req.params, body: req.body };
-        const httpResponse = await controller.handle(httpRequest);
-        res.status(httpResponse.statusCode).json(httpResponse.body);
-    }
-}
+import { authGuard } from "../config/middleware/auth-guard";
+import { adaptRoute } from "../config/adapt-route";
 
 const createOrUpdateController = makeCreateOrUpdateIngredient();
 const listController = makeGetIngredients();
 const delController = makeDelIngredient();
 
 export default (router: Router): void => {
-    router.post("/ingredient", adaptRoute(createOrUpdateController))
+    router.post("/ingredient", authGuard, adaptRoute(createOrUpdateController))
     router.get("/ingredients", adaptRoute(listController))
-    router.delete("/ingredient/:id", adaptRoute(delController))
+    router.delete("/ingredient/:id", authGuard, adaptRoute(delController))
 }

@@ -18,7 +18,7 @@ export function connection() {
                     if(error) return reject(error);
 
                     connection.release();
-                    return resolve(data);
+                    return resolve(data as unknown as T);
                 })
             })
         })

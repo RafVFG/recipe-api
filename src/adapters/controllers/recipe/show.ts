@@ -12,7 +12,7 @@ export function recipeShowController(getRecipeById: GetRecipeByIdMethods): Recip
 
         try {
             const recipe = await getRecipeById.run(id);
-            if (!recipe) return res.badRequest("Recipe not found");
+            if (!recipe) return res.notFound("Recipe not found");
             return res.ok(recipe);
         } catch (error) {
             return res.serverError(`Internal: ${error}`);

@@ -5,7 +5,7 @@ import { Recipe } from "../../entities/recipe/interfaces/recipe";
 export function recipeRepository(): RecipeRepositoryMethods {
   const database = connection();
 
-  async function createOrUpdate(data: Recipe): Promise<void> {
+  async function createOrUpdate(data: Recipe): Promise<number> {
     let recipeId = data.id;
 
     const directions = JSON.stringify(data.directions);
@@ -47,6 +47,33 @@ export function recipeRepository(): RecipeRepositoryMethods {
         [recipeId, ingredientId, ingredient.amount ?? null]
       );
     }
+
+    return recipeId;
+  }
+
+  async function syncTags(idRecipe: number, tagIds: number[]): Promise<void> {
+    await database.execute(
+      `DELETE FROM recipe_tag WHERE idRecipe = ?`,
+      [idRecipe]
+    );
+
+    for (const idTag of tagIds) {
+      await database.execute(
+        `INSERT INTO recipe_tag (idRecipe, idTag) VALUES (?, ?)`,
+        [idRecipe, idTag]
+      );
+    }
+  }
+
+  async function getTagsByRecipeId(idRecipe: number): Promise<string[]> {
+    const rows = await database.execute<{ name: string }[]>(
+      `SELECT t.name FROM tag t
+       JOIN recipe_tag rt ON rt.idTag = t.id
+       WHERE rt.idRecipe = ?
+       ORDER BY t.name ASC`,
+      [idRecipe]
+    );
+    return rows.map(r => r.name);
   }
 
   async function getAll(filters?: { ingredient?: string }): Promise<RecipeResult[]> {
@@ -103,5 +130,7 @@ export function recipeRepository(): RecipeRepositoryMethods {
     getAll,
     getById,
     remove,
+    syncTags,
+    getTagsByRecipeId,
   };
 }
