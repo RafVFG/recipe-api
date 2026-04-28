@@ -7,7 +7,7 @@ export interface RecipeResult {
     description: string | null
     directions: string
     rating: number | null
-    prepTime: string | null
+    prepTime: number | null
     yields: number | null
     created_at: string
     updated_at: string
@@ -16,9 +16,16 @@ export interface RecipeResult {
     tags: string[]
 }
 
+export interface RecipeFilters {
+    name?: string
+    ingredient?: string
+    tags?: string[]
+    prepTime?: number
+}
+
 export interface RecipeRepositoryMethods {
     createOrUpdate: (data: Recipe) => Promise<number>
-    getAll: (filters?: { ingredient?: string }) => Promise<RecipeResult[]>
+    getAll: (filters?: RecipeFilters) => Promise<RecipeResult[]>
     getById: (id: number) => Promise<RecipeResult | null>
     remove: (id: number) => Promise<void>
     syncTags: (idRecipe: number, tagIds: number[]) => Promise<void>

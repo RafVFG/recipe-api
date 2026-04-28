@@ -1,5 +1,5 @@
-import { RecipeResult } from "../../../repositories/recipe/interfaces/methods";
+import { RecipeFilters, RecipeResult } from "../../../repositories/recipe/interfaces/methods";
 
 export interface GetRecipesMethods {
-    run: (filters?: { ingredient?: string }) => Promise<RecipeResult[]>
+    run: (filters?: RecipeFilters) => Promise<RecipeResult[]>
 }

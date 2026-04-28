@@ -12,6 +12,6 @@ export interface Recipe {
   directions: string[];
   rating?: number;
   tags?: string[];
-  prepTime?: string;
+  prepTime?: number;
   yields?: number;
 }
