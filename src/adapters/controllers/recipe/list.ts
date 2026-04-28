@@ -8,13 +8,24 @@ export function recipeListController(getRecipes: GetRecipesMethods): RecipeListC
         const res = response();
 
         try {
-            const filters = { ingredient: httpRequest.query?.ingredient as string | undefined };
-            const recipes = await getRecipes.run(filters);
+            const q = httpRequest.query ?? {};
+            const name = q.name as string | undefined;
+            const ingredient = q.ingredient as string | undefined;
+
+            const tagsRaw = q.tags as string | undefined;
+            const tags = tagsRaw
+                ? tagsRaw.split(",").map((t: string) => t.trim()).filter(Boolean)
+                : undefined;
+
+            const prepTimeNum = parseInt(q.prepTime as string, 10);
+            const prepTime = isNaN(prepTimeNum) ? undefined : prepTimeNum;
+
+            const recipes = await getRecipes.run({ name, ingredient, tags, prepTime });
             return res.ok(recipes);
         } catch (error) {
             return res.serverError(`Internal: ${error}`);
         }
     }
 
-    return { handle }
+    return { handle };
 }
