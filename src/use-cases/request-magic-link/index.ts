@@ -24,7 +24,7 @@ export function requestMagicLink(
 
         await authTokenRepository.create({ idUser: user.id, hash, expiresAt });
 
-        const link = `${process.env.APP_URL}/api/auth/verify?token=${rawToken}`;
+        const link = `${process.env.FRONTEND_URL}/auth/verify?token=${rawToken}`;
 
         await emailSender.send({
             to: email,
