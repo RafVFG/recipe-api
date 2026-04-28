@@ -1,8 +1,8 @@
-import { RecipeRepositoryMethods } from "../../repositories/recipe/interfaces/methods";
+import { RecipeRepositoryMethods, RecipeFilters } from "../../repositories/recipe/interfaces/methods";
 import { GetRecipesMethods } from "./interfaces/methods";
 
 export function getRecipes(recipeRepository: RecipeRepositoryMethods): GetRecipesMethods {
-    async function run(filters?: { ingredient?: string }) {
+    async function run(filters?: RecipeFilters) {
         const recipes = await recipeRepository.getAll(filters);
 
         return Promise.all(
