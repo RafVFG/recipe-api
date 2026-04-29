@@ -78,8 +78,8 @@ export function recipeRepository(): RecipeRepositoryMethods {
 
   async function getAll(filters?: RecipeFilters): Promise<RecipeResult[]> {
     const whereConditions: string[] = [];
-    const whereParams: any[] = [];
-    const orderParams: any[] = [];
+    const whereParams: (string | number)[] = [];
+    const orderParams: (string | number)[] = [];
 
     if (filters?.ingredient) {
       whereConditions.push(`EXISTS (
@@ -113,23 +113,23 @@ export function recipeRepository(): RecipeRepositoryMethods {
     }
 
     const where = whereConditions.length > 0
-      ? `WHERE ${whereConditions.join(" AND ")}`
+      ? `where ${whereConditions.join(" and ")}`
       : "";
 
     const orderBy = filters?.name
-      ? `ORDER BY CASE WHEN lower(r.name) = lower(?) THEN 0 WHEN lower(r.name) LIKE lower(?) THEN 1 ELSE 2 END, r.created_at DESC`
-      : `ORDER BY r.created_at DESC`;
+      ? `order by case when lower(r.name) = lower(?) then 0 when lower(r.name) like lower(?) then 1 else 2 end, r.created_at desc`
+      : `order by r.created_at desc`;
 
     const allParams = [...whereParams, ...orderParams];
 
     const recipes = await database.execute<RecipeResult[]>(
-      `SELECT r.*,
-        (SELECT json_arrayagg(json_object('id', i.id, 'name', i.name, 'amount', ri.amount))
-         FROM recipe_ingredient ri JOIN ingredient i ON i.id = ri.idIngredient
-         WHERE ri.idRecipe = r.id) AS ingredients,
-        (SELECT json_arrayagg(json_object('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
-         FROM recipe_photo p WHERE p.idRecipe = r.id) AS photos
-       FROM recipe r
+      `select r.*,
+        (select json_arrayagg(json_object('id', i.id, 'name', i.name, 'amount', ri.amount))
+         from recipe_ingredient ri join ingredient i on i.id = ri.idIngredient
+         where ri.idRecipe = r.id) as ingredients,
+        (select json_arrayagg(json_object('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
+         from recipe_photo p where p.idRecipe = r.id) as photos
+       from recipe r
        ${where}
        ${orderBy}`,
       allParams

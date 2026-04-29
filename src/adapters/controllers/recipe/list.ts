@@ -13,9 +13,10 @@ export function recipeListController(getRecipes: GetRecipesMethods): RecipeListC
             const ingredient = q.ingredient as string | undefined;
 
             const tagsRaw = q.tags as string | undefined;
-            const tags = tagsRaw
+            const tagsArr = tagsRaw
                 ? tagsRaw.split(",").map((t: string) => t.trim()).filter(Boolean)
                 : undefined;
+            const tags = tagsArr && tagsArr.length > 0 ? tagsArr : undefined;
 
             const prepTimeNum = parseInt(q.prepTime as string, 10);
             const prepTime = isNaN(prepTimeNum) ? undefined : prepTimeNum;
