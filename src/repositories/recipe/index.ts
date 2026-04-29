@@ -1,4 +1,4 @@
-import { RecipeRepositoryMethods, RecipeResult } from "./interfaces/methods";
+import { RecipeRepositoryMethods, RecipeResult, RecipeFilters } from "./interfaces/methods";
 import { connection } from "../../main/config/connection-mysql";
 import { Recipe } from "../../entities/recipe/interfaces/recipe";
 
@@ -76,30 +76,63 @@ export function recipeRepository(): RecipeRepositoryMethods {
     return rows.map(r => r.name);
   }
 
-  async function getAll(filters?: { ingredient?: string }): Promise<RecipeResult[]> {
-    const params: any[] = [];
-    let where = "";
+  async function getAll(filters?: RecipeFilters): Promise<RecipeResult[]> {
+    const whereConditions: string[] = [];
+    const whereParams: any[] = [];
+    const orderParams: any[] = [];
 
     if (filters?.ingredient) {
-      where = `where exists (
-        select 1 from recipe_ingredient ri
-        join ingredient i on i.id = ri.idIngredient
-        where ri.idRecipe = r.id and lower(i.name) like ?
-      )`;
-      params.push(`%${filters.ingredient.toLowerCase()}%`);
+      whereConditions.push(`EXISTS (
+      SELECT 1 FROM recipe_ingredient ri
+      JOIN ingredient i ON i.id = ri.idIngredient
+      WHERE ri.idRecipe = r.id AND lower(i.name) LIKE ?
+    )`);
+      whereParams.push(`%${filters.ingredient.toLowerCase()}%`);
     }
 
+    if (filters?.name) {
+      whereConditions.push(`lower(r.name) LIKE ?`);
+      whereParams.push(`%${filters.name.toLowerCase()}%`);
+      orderParams.push(filters.name, `${filters.name.toLowerCase()}%`);
+    }
+
+    if (filters?.tags && filters.tags.length > 0) {
+      for (const tag of filters.tags) {
+        whereConditions.push(`EXISTS (
+        SELECT 1 FROM recipe_tag rt
+        JOIN tag t ON t.id = rt.idTag
+        WHERE rt.idRecipe = r.id AND lower(t.name) = lower(?)
+      )`);
+        whereParams.push(tag);
+      }
+    }
+
+    if (filters?.prepTime !== undefined) {
+      whereConditions.push(`r.prepTime = ?`);
+      whereParams.push(filters.prepTime);
+    }
+
+    const where = whereConditions.length > 0
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
+
+    const orderBy = filters?.name
+      ? `ORDER BY CASE WHEN lower(r.name) = lower(?) THEN 0 WHEN lower(r.name) LIKE lower(?) THEN 1 ELSE 2 END, r.created_at DESC`
+      : `ORDER BY r.created_at DESC`;
+
+    const allParams = [...whereParams, ...orderParams];
+
     const recipes = await database.execute<RecipeResult[]>(
-      `select r.*,
-        (select json_arrayagg(json_object('id', i.id, 'name', i.name, 'amount', ri.amount))
-         from recipe_ingredient ri join ingredient i on i.id = ri.idIngredient
-         where ri.idRecipe = r.id) as ingredients,
-        (select json_arrayagg(json_object('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
-         from recipe_photo p where p.idRecipe = r.id) as photos
-       from recipe r
+      `SELECT r.*,
+        (SELECT json_arrayagg(json_object('id', i.id, 'name', i.name, 'amount', ri.amount))
+         FROM recipe_ingredient ri JOIN ingredient i ON i.id = ri.idIngredient
+         WHERE ri.idRecipe = r.id) AS ingredients,
+        (SELECT json_arrayagg(json_object('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
+         FROM recipe_photo p WHERE p.idRecipe = r.id) AS photos
+       FROM recipe r
        ${where}
-       order by r.created_at desc`,
-      params
+       ${orderBy}`,
+      allParams
     );
     return recipes;
   }
