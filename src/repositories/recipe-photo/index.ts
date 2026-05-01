@@ -1,5 +1,5 @@
 import { connection } from "../../main/config/connection-mysql";
-import { RecipePhotoRepositoryMethods } from "./interfaces/methods";
+import { RecipePhotoRepositoryMethods, RecipePhoto } from "./interfaces/methods";
 
 export function recipePhotoRepository(): RecipePhotoRepositoryMethods {
     const database = connection();
@@ -25,8 +25,25 @@ export function recipePhotoRepository(): RecipePhotoRepositoryMethods {
         );
     }
 
+    async function findById(id: number): Promise<RecipePhoto | null> {
+        const rows = await database.execute<RecipePhoto[]>(
+            `select id, idRecipe, url, isPrimary from recipe_photo where id = ?`,
+            [id]
+        )
+        return rows[0] ?? null
+    }
+
+    async function promotePrimary(idRecipe: number): Promise<void> {
+        await database.execute(
+            `update recipe_photo set isPrimary = 1 where idRecipe = ? order by id asc limit 1`,
+            [idRecipe]
+        )
+    }
+
     return {
         add,
-        remove
+        remove,
+        findById,
+        promotePrimary
     }
 }
