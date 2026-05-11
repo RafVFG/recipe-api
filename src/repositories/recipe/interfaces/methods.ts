@@ -23,9 +23,15 @@ export interface RecipeFilters {
     prepTime?: number
 }
 
+export interface PaginatedRecipesResult {
+    recipes: RecipeResult[]
+    total: number
+}
+
 export interface RecipeRepositoryMethods {
     createOrUpdate: (data: Recipe) => Promise<number>
     getAll: (filters?: RecipeFilters) => Promise<RecipeResult[]>
+    getPaginated: (filters: RecipeFilters | undefined, page: number, pageSize: number) => Promise<PaginatedRecipesResult>
     getById: (id: number) => Promise<RecipeResult | null>
     remove: (id: number) => Promise<void>
     syncTags: (idRecipe: number, tagIds: number[]) => Promise<void>

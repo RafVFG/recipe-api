@@ -3,6 +3,7 @@ import { createOrUpdateRecipe } from "../../src/use-cases/create-recipe";
 const mockRecipeRepo = {
     createOrUpdate: jest.fn(),
     getAll: jest.fn(),
+    getPaginated: jest.fn(),
     getById: jest.fn(),
     remove: jest.fn(),
     syncTags: jest.fn(),

@@ -1,9 +1,56 @@
-import { RecipeRepositoryMethods, RecipeResult, RecipeFilters } from "./interfaces/methods";
+import { RecipeRepositoryMethods, RecipeResult, RecipeFilters, PaginatedRecipesResult } from "./interfaces/methods";
 import { connection } from "../../main/config/connection-mysql";
 import { Recipe } from "../../entities/recipe/interfaces/recipe";
 
 export function recipeRepository(): RecipeRepositoryMethods {
   const database = connection();
+
+  function buildWhereClause(filters?: RecipeFilters) {
+    const whereConditions: string[] = [];
+    const whereParams: (string | number)[] = [];
+    const orderParams: (string | number)[] = [];
+
+    if (filters?.ingredient) {
+      whereConditions.push(`EXISTS (
+      SELECT 1 FROM recipe_ingredient ri
+      JOIN ingredient i ON i.id = ri.idIngredient
+      WHERE ri.idRecipe = r.id AND lower(i.name) LIKE ?
+    )`);
+      whereParams.push(`%${filters.ingredient.toLowerCase()}%`);
+    }
+
+    if (filters?.name) {
+      whereConditions.push(`lower(r.name) LIKE ?`);
+      whereParams.push(`%${filters.name.toLowerCase()}%`);
+      orderParams.push(filters.name, `${filters.name.toLowerCase()}%`);
+    }
+
+    if (filters?.tags && filters.tags.length > 0) {
+      for (const tag of filters.tags) {
+        whereConditions.push(`EXISTS (
+        SELECT 1 FROM recipe_tag rt
+        JOIN tag t ON t.id = rt.idTag
+        WHERE rt.idRecipe = r.id AND lower(t.name) = lower(?)
+      )`);
+        whereParams.push(tag);
+      }
+    }
+
+    if (filters?.prepTime !== undefined) {
+      whereConditions.push(`r.prepTime = ?`);
+      whereParams.push(filters.prepTime);
+    }
+
+    const where = whereConditions.length > 0
+      ? `where ${whereConditions.join(" and ")}`
+      : "";
+
+    const orderBy = filters?.name
+      ? `order by case when lower(r.name) = lower(?) then 0 when lower(r.name) like lower(?) then 1 else 2 end, r.created_at desc`
+      : `order by r.created_at desc`;
+
+    return { where, whereParams, orderBy, orderParams };
+  }
 
   async function createOrUpdate(data: Recipe): Promise<number> {
     let recipeId = data.id;
@@ -77,49 +124,7 @@ export function recipeRepository(): RecipeRepositoryMethods {
   }
 
   async function getAll(filters?: RecipeFilters): Promise<RecipeResult[]> {
-    const whereConditions: string[] = [];
-    const whereParams: (string | number)[] = [];
-    const orderParams: (string | number)[] = [];
-
-    if (filters?.ingredient) {
-      whereConditions.push(`EXISTS (
-      SELECT 1 FROM recipe_ingredient ri
-      JOIN ingredient i ON i.id = ri.idIngredient
-      WHERE ri.idRecipe = r.id AND lower(i.name) LIKE ?
-    )`);
-      whereParams.push(`%${filters.ingredient.toLowerCase()}%`);
-    }
-
-    if (filters?.name) {
-      whereConditions.push(`lower(r.name) LIKE ?`);
-      whereParams.push(`%${filters.name.toLowerCase()}%`);
-      orderParams.push(filters.name, `${filters.name.toLowerCase()}%`);
-    }
-
-    if (filters?.tags && filters.tags.length > 0) {
-      for (const tag of filters.tags) {
-        whereConditions.push(`EXISTS (
-        SELECT 1 FROM recipe_tag rt
-        JOIN tag t ON t.id = rt.idTag
-        WHERE rt.idRecipe = r.id AND lower(t.name) = lower(?)
-      )`);
-        whereParams.push(tag);
-      }
-    }
-
-    if (filters?.prepTime !== undefined) {
-      whereConditions.push(`r.prepTime = ?`);
-      whereParams.push(filters.prepTime);
-    }
-
-    const where = whereConditions.length > 0
-      ? `where ${whereConditions.join(" and ")}`
-      : "";
-
-    const orderBy = filters?.name
-      ? `order by case when lower(r.name) = lower(?) then 0 when lower(r.name) like lower(?) then 1 else 2 end, r.created_at desc`
-      : `order by r.created_at desc`;
-
+    const { where, whereParams, orderBy, orderParams } = buildWhereClause(filters);
     const allParams = [...whereParams, ...orderParams];
 
     const recipes = await database.execute<RecipeResult[]>(
@@ -158,9 +163,43 @@ export function recipeRepository(): RecipeRepositoryMethods {
     );
   }
 
+  async function getPaginated(
+    filters: RecipeFilters | undefined,
+    page: number,
+    pageSize: number
+  ): Promise<PaginatedRecipesResult> {
+    const { where, whereParams, orderBy, orderParams } = buildWhereClause(filters);
+    const offset = (page - 1) * pageSize;
+
+    const countRows = await database.execute<{ count: number }[]>(
+      `select count(*) as count from recipe r ${where}`,
+      whereParams
+    );
+    const total = Number(countRows[0]?.count ?? 0);
+
+    const allParams = [...whereParams, ...orderParams, pageSize, offset];
+
+    const recipes = await database.execute<RecipeResult[]>(
+      `select r.*,
+          (select json_arrayagg(json_object('id', i.id, 'name', i.name, 'amount', ri.amount))
+           from recipe_ingredient ri join ingredient i on i.id = ri.idIngredient
+           where ri.idRecipe = r.id) as ingredients,
+          (select json_arrayagg(json_object('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
+           from recipe_photo p where p.idRecipe = r.id) as photos
+         from recipe r
+         ${where}
+         ${orderBy}
+         LIMIT ? OFFSET ?`,
+      allParams
+    );
+
+    return { recipes, total };
+  }
+
   return {
     createOrUpdate,
     getAll,
+    getPaginated,
     getById,
     remove,
     syncTags,
