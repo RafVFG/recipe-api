@@ -2,6 +2,8 @@ import { requestMagicLink } from "../../src/use-cases/request-magic-link";
 
 const mockUserRepo = {
     findByEmail: jest.fn(),
+    create: jest.fn(),
+    findById: jest.fn(),
 };
 
 const mockAuthTokenRepo = {

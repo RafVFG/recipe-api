@@ -8,6 +8,7 @@ const mockRepo = {
     remove: jest.fn(),
     syncTags: jest.fn(),
     getTagsByRecipeId: jest.fn(),
+    getByUser: jest.fn(),
 };
 
 const fakeRecipe = {

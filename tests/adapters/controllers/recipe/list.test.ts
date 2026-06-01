@@ -158,4 +158,21 @@ describe("recipeListController", () => {
         const result = await controller.handle({ query: {} });
         expect(result.statusCode).toBe(500);
     });
+
+    it("passes sort=favorites when sort query param is 'favorites'", async () => {
+        mockUseCase.run.mockResolvedValue({ recipes: [], total: 0 });
+        const controller = recipeListController(mockUseCase);
+        await controller.handle({ query: { sort: 'favorites' } });
+        expect(mockUseCase.run).toHaveBeenCalledWith(
+            { name: undefined, ingredient: undefined, tags: undefined, prepTime: undefined, sort: 'favorites' },
+            1, 12
+        );
+    });
+
+    it("ignores sort param when value is not 'favorites'", async () => {
+        mockUseCase.run.mockResolvedValue({ recipes: [], total: 0 });
+        const controller = recipeListController(mockUseCase);
+        await controller.handle({ query: { sort: 'unknown' } });
+        expect(mockUseCase.run).toHaveBeenCalledWith(undefined, 1, 12);
+    });
 });

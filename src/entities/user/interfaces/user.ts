@@ -3,3 +3,8 @@ export interface User {
     name: string;
     email: string;
 }
+
+export interface UserProfile extends User {
+    recipesCount: number;
+    favoritesCount: number;
+}

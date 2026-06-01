@@ -14,4 +14,18 @@ describe("response helper", () => {
     expect(result.statusCode).toBe(404);
     expect(result.body).toBe("Email não encontrado");
   });
+
+  it("created returns 201 with optional data", async () => {
+    const res = response();
+    const result = await res.created();
+    expect(result.statusCode).toBe(201);
+    expect(result.body).toBeUndefined();
+  });
+
+  it("conflict returns 409 with message", async () => {
+    const res = response();
+    const result = await res.conflict("Email já cadastrado");
+    expect(result.statusCode).toBe(409);
+    expect(result.body).toBe("Email já cadastrado");
+  });
 });

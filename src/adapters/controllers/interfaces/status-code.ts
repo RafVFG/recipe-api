@@ -13,6 +13,10 @@ export function response() {
         return { statusCode: 404, body: error }
     }
 
+    async function conflict(error: string): Promise<HttpResponse> {
+        return { statusCode: 409, body: error }
+    }
+
     async function serverError(error: string): Promise<HttpResponse> {
         return { statusCode: 500, body: error }
     }
@@ -21,11 +25,17 @@ export function response() {
         return { statusCode: 200, body: data }
     }
 
+    async function created(data?: any): Promise<HttpResponse> {
+        return { statusCode: 201, body: data }
+    }
+
     return {
         badRequest,
         unauthorized,
         notFound,
+        conflict,
         serverError,
-        ok
+        ok,
+        created,
     }
 }

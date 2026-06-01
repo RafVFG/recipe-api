@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS recipe_photo (
     id        INT          NOT NULL AUTO_INCREMENT,
     idRecipe  INT          NOT NULL,
     url       VARCHAR(500) NOT NULL,
-    isPrimary TINYINT(1)   NOT NULL DEFAULT 0,
+    isPrimary TINYINT      NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     FOREIGN KEY (idRecipe) REFERENCES recipe(id) ON DELETE CASCADE
 );
@@ -109,4 +109,15 @@ CREATE TABLE IF NOT EXISTS auth_token (
     expires_at DATETIME     NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (idUser) REFERENCES user(id) ON DELETE CASCADE
+);
+
+-- ------------------------------------------------------------
+-- Favoritos (usuário x receita)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_recipe (
+    idUser   INT NOT NULL,
+    idRecipe INT NOT NULL,
+    PRIMARY KEY (idUser, idRecipe),
+    FOREIGN KEY (idUser)   REFERENCES user(id)   ON DELETE CASCADE,
+    FOREIGN KEY (idRecipe) REFERENCES recipe(id) ON DELETE CASCADE
 );

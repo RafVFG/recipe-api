@@ -9,6 +9,9 @@ export function recipeRepository(): RecipeRepositoryMethods {
     const whereConditions: string[] = [];
     const whereParams: (string | number)[] = [];
     const orderParams: (string | number)[] = [];
+    let join = '';
+    let groupBy = '';
+    let orderBy = 'order by r.created_at desc';
 
     if (filters?.ingredient) {
       whereConditions.push(`EXISTS (
@@ -22,6 +25,7 @@ export function recipeRepository(): RecipeRepositoryMethods {
     if (filters?.name) {
       whereConditions.push(`lower(r.name) LIKE ?`);
       whereParams.push(`%${filters.name.toLowerCase()}%`);
+      orderBy = `order by case when lower(r.name) = lower(?) then 0 when lower(r.name) like lower(?) then 1 else 2 end, r.created_at desc`;
       orderParams.push(filters.name, `${filters.name.toLowerCase()}%`);
     }
 
@@ -41,15 +45,17 @@ export function recipeRepository(): RecipeRepositoryMethods {
       whereParams.push(filters.prepTime);
     }
 
+    if (filters?.sort === 'favorites' && !filters?.name) {
+      join = 'LEFT JOIN user_recipe ur ON ur.idRecipe = r.id';
+      groupBy = 'GROUP BY r.id';
+      orderBy = 'ORDER BY COUNT(ur.idUser) DESC, r.created_at DESC';
+    }
+
     const where = whereConditions.length > 0
       ? `where ${whereConditions.join(" and ")}`
       : "";
 
-    const orderBy = filters?.name
-      ? `order by case when lower(r.name) = lower(?) then 0 when lower(r.name) like lower(?) then 1 else 2 end, r.created_at desc`
-      : `order by r.created_at desc`;
-
-    return { where, whereParams, orderBy, orderParams };
+    return { where, whereParams, orderBy, orderParams, join, groupBy };
   }
 
   async function createOrUpdate(data: Recipe): Promise<number> {
@@ -163,18 +169,35 @@ export function recipeRepository(): RecipeRepositoryMethods {
     );
   }
 
+  async function getByUser(idUser: number): Promise<RecipeResult[]> {
+    const recipes = await database.execute<RecipeResult[]>(
+      `SELECT r.*,
+          (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', i.id, 'name', i.name, 'amount', ri.amount))
+           FROM recipe_ingredient ri JOIN ingredient i ON i.id = ri.idIngredient
+           WHERE ri.idRecipe = r.id) AS ingredients,
+          (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
+           FROM recipe_photo p WHERE p.idRecipe = r.id) AS photos
+       FROM recipe r
+       WHERE r.idUser = ?
+       ORDER BY r.created_at DESC`,
+      [idUser]
+    );
+    return recipes;
+  }
+
   async function getPaginated(
     filters: RecipeFilters | undefined,
     page: number,
     pageSize: number
   ): Promise<PaginatedRecipesResult> {
-    const { where, whereParams, orderBy, orderParams } = buildWhereClause(filters);
+    const { where, whereParams, orderBy, orderParams, join, groupBy } = buildWhereClause(filters);
     const offset = (page - 1) * pageSize;
 
-    const countRows = await database.execute<{ count: number }[]>(
-      `select count(*) as count from recipe r ${where}`,
-      whereParams
-    );
+    const countQuery = groupBy
+      ? `select count(distinct r.id) as count from recipe r ${join} ${where}`
+      : `select count(*) as count from recipe r ${where}`;
+
+    const countRows = await database.execute<{ count: number }[]>(countQuery, whereParams);
     const total = Number(countRows[0]?.count ?? 0);
 
     const allParams = [...whereParams, ...orderParams, pageSize, offset];
@@ -187,7 +210,9 @@ export function recipeRepository(): RecipeRepositoryMethods {
           (select json_arrayagg(json_object('id', p.id, 'url', p.url, 'isPrimary', p.isPrimary))
            from recipe_photo p where p.idRecipe = r.id) as photos
          from recipe r
+         ${join}
          ${where}
+         ${groupBy}
          ${orderBy}
          LIMIT ? OFFSET ?`,
       allParams
@@ -204,5 +229,6 @@ export function recipeRepository(): RecipeRepositoryMethods {
     remove,
     syncTags,
     getTagsByRecipeId,
+    getByUser,
   };
 }

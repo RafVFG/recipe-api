@@ -31,8 +31,10 @@ export function recipeListController(getRecipes: GetRecipesPaginatedMethods): Re
             const prepTimeNum = parseInt(q.prepTime as string, 10);
             const prepTime = isNaN(prepTimeNum) ? undefined : prepTimeNum;
 
-            const hasFilterKeys = "name" in q || "ingredient" in q || "tags" in q || "prepTime" in q;
-            const filters = hasFilterKeys ? { name, ingredient, tags, prepTime } : undefined;
+            const sort = q.sort === 'favorites' ? 'favorites' as const : undefined;
+
+            const hasFilterKeys = "name" in q || "ingredient" in q || "tags" in q || "prepTime" in q || sort !== undefined;
+            const filters = hasFilterKeys ? { name, ingredient, tags, prepTime, sort } : undefined;
 
             const { recipes, total } = await getRecipes.run(filters, page, pageSize);
 

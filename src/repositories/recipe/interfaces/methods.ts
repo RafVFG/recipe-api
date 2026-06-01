@@ -21,6 +21,7 @@ export interface RecipeFilters {
     ingredient?: string
     tags?: string[]
     prepTime?: number
+    sort?: 'favorites'
 }
 
 export interface PaginatedRecipesResult {
@@ -36,4 +37,5 @@ export interface RecipeRepositoryMethods {
     remove: (id: number) => Promise<void>
     syncTags: (idRecipe: number, tagIds: number[]) => Promise<void>
     getTagsByRecipeId: (idRecipe: number) => Promise<string[]>
+    getByUser: (idUser: number) => Promise<RecipeResult[]>
 }
