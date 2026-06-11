@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { RegisterUserMethods } from "./interfaces/methods";
 import { UserRepositoryMethods } from "../../repositories/user/interfaces/methods";
 import { AuthTokenRepositoryMethods } from "../../repositories/auth-token/interfaces/methods";
@@ -9,11 +10,12 @@ export function registerUser(
     authTokenRepository: AuthTokenRepositoryMethods,
     emailSender: EmailSenderMethods
 ): RegisterUserMethods {
-    async function run(name: string, email: string): Promise<void> {
+    async function run(name: string, email: string, password: string): Promise<void> {
         const existing = await userRepository.findByEmail(email);
         if (existing) throw new Error("Email já cadastrado");
 
-        const user = await userRepository.create(name, email);
+        const passwordHash = await bcrypt.hash(password, 10);
+        const user = await userRepository.create(name, email, passwordHash);
 
         const rawToken = crypto.randomBytes(32).toString("hex");
         const hash = crypto.createHash("sha256").update(rawToken).digest("hex");
@@ -21,7 +23,7 @@ export function registerUser(
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
-        await authTokenRepository.create({ idUser: user.id, hash, expiresAt });
+        await authTokenRepository.create({ idUser: user.id, hash, expiresAt, type: 'magic_link' });
 
         const frontendUrl = process.env.FRONTEND_URL;
         if (!frontendUrl) throw new Error("FRONTEND_URL não configurado");

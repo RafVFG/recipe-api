@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS user (
     id         INT           NOT NULL AUTO_INCREMENT,
     name       VARCHAR(100)  NOT NULL,
     email      VARCHAR(150)  NOT NULL UNIQUE,
+    password   VARCHAR(255)  NOT NULL,
     created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 );
@@ -100,12 +101,13 @@ CREATE TABLE IF NOT EXISTS recipe_photo (
 );
 
 -- ------------------------------------------------------------
--- Tokens de autenticação (magic link)
+-- Tokens de autenticação (magic link / password reset)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS auth_token (
     id         INT          NOT NULL AUTO_INCREMENT,
     idUser     INT          NOT NULL,
     hash       VARCHAR(255) NOT NULL UNIQUE,
+    type       ENUM('magic_link', 'password_reset') NOT NULL DEFAULT 'magic_link',
     expires_at DATETIME     NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (idUser) REFERENCES user(id) ON DELETE CASCADE

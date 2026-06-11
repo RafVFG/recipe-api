@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
-import { makeRequestMagicLink } from "../../adapters/factories/request-magic-link";
+import { makeLogin } from "../../adapters/factories/login";
 import { makeVerifyMagicLink } from "../../adapters/factories/verify-magic-link";
+import { makeForgotPassword } from "../../adapters/factories/forgot-password";
+import { makeResetPassword } from "../../adapters/factories/reset-password";
 
 function adaptRoute(controller: { handle: (req: any) => Promise<any> }) {
     return async (req: Request, res: Response) => {
@@ -10,10 +12,14 @@ function adaptRoute(controller: { handle: (req: any) => Promise<any> }) {
     };
 }
 
-const requestController = makeRequestMagicLink();
-const verifyController = makeVerifyMagicLink();
+const loginCtrl = makeLogin();
+const verifyCtrl = makeVerifyMagicLink();
+const forgotPasswordCtrl = makeForgotPassword();
+const resetPasswordCtrl = makeResetPassword();
 
 export default (router: Router): void => {
-    router.post("/auth/request", adaptRoute(requestController));
-    router.get("/auth/verify", adaptRoute(verifyController));
+    router.post("/auth/login", adaptRoute(loginCtrl));
+    router.get("/auth/verify", adaptRoute(verifyCtrl));
+    router.post("/auth/forgot-password", adaptRoute(forgotPasswordCtrl));
+    router.post("/auth/reset-password", adaptRoute(resetPasswordCtrl));
 };

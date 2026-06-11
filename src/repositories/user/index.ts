@@ -7,16 +7,16 @@ export function userRepository(): UserRepositoryMethods {
 
     async function findByEmail(email: string): Promise<User | null> {
         const rows = await database.execute<User[]>(
-            `SELECT id, name, email FROM user WHERE email = ? LIMIT 1`,
+            `SELECT id, name, email, password FROM user WHERE email = ? LIMIT 1`,
             [email]
         );
         return rows[0] ?? null;
     }
 
-    async function create(name: string, email: string): Promise<User> {
+    async function create(name: string, email: string, passwordHash: string): Promise<User> {
         const result = await database.execute<{ insertId: number }>(
-            `INSERT INTO user (name, email) VALUES (?, ?)`,
-            [name, email]
+            `INSERT INTO user (name, email, password) VALUES (?, ?, ?)`,
+            [name, email, passwordHash]
         );
         if (!result.insertId) {
             throw new Error("Falha ao criar usuário: insertId inválido");
@@ -43,5 +43,12 @@ export function userRepository(): UserRepositoryMethods {
         return rows[0] ?? null;
     }
 
-    return { findByEmail, create, findById };
+    async function updatePassword(idUser: number, passwordHash: string): Promise<void> {
+        await database.execute(
+            `UPDATE user SET password = ? WHERE id = ?`,
+            [passwordHash, idUser]
+        );
+    }
+
+    return { findByEmail, create, findById, updatePassword };
 }

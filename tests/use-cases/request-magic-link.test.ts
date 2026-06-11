@@ -4,6 +4,7 @@ const mockUserRepo = {
     findByEmail: jest.fn(),
     create: jest.fn(),
     findById: jest.fn(),
+    updatePassword: jest.fn(),
 };
 
 const mockAuthTokenRepo = {
@@ -38,7 +39,7 @@ describe("requestMagicLink", () => {
         await useCase.run("joao@test.com");
 
         expect(mockAuthTokenRepo.create).toHaveBeenCalledWith(
-            expect.objectContaining({ idUser: 1 })
+            expect.objectContaining({ idUser: expect.any(Number), type: 'magic_link' })
         );
         expect(mockEmailSender.send).toHaveBeenCalledWith(
             expect.objectContaining({ to: "joao@test.com" })

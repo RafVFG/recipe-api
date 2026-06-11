@@ -21,6 +21,8 @@ describe("verifyMagicLink", () => {
 
         const useCase = verifyMagicLink(mockAuthTokenRepo);
         await expect(useCase.run(RAW_TOKEN)).rejects.toThrow("Token inválido");
+
+        expect(mockAuthTokenRepo.findByHash).toHaveBeenCalledWith(HASH, 'magic_link');
     });
 
     it("throws 'Link expirado' when token is expired", async () => {
@@ -28,10 +30,7 @@ describe("verifyMagicLink", () => {
         expired.setMinutes(expired.getMinutes() - 1);
 
         mockAuthTokenRepo.findByHash.mockResolvedValue({
-            id: 1,
-            idUser: 42,
-            hash: HASH,
-            expires_at: expired,
+            id: 1, idUser: 42, hash: HASH, type: 'magic_link', expires_at: expired,
         });
 
         const useCase = verifyMagicLink(mockAuthTokenRepo);
@@ -43,10 +42,7 @@ describe("verifyMagicLink", () => {
         future.setMinutes(future.getMinutes() + 10);
 
         mockAuthTokenRepo.findByHash.mockResolvedValue({
-            id: 1,
-            idUser: 42,
-            hash: HASH,
-            expires_at: future,
+            id: 1, idUser: 42, hash: HASH, type: 'magic_link', expires_at: future,
         });
         mockAuthTokenRepo.deleteByHash.mockResolvedValue(undefined);
 
@@ -54,7 +50,7 @@ describe("verifyMagicLink", () => {
         const result = await useCase.run(RAW_TOKEN);
 
         expect(typeof result.jwt).toBe("string");
-        expect(result.jwt.split(".").length).toBe(3); // JWT format
+        expect(result.jwt.split(".").length).toBe(3);
         expect(mockAuthTokenRepo.deleteByHash).toHaveBeenCalledWith(HASH);
     });
 });

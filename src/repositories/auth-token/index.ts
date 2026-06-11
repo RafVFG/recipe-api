@@ -4,17 +4,17 @@ import { connection } from "../../main/config/connection-mysql";
 export function authTokenRepository(): AuthTokenRepositoryMethods {
     const database = connection();
 
-    async function create(data: { idUser: number; hash: string; expiresAt: Date }): Promise<void> {
+    async function create(data: { idUser: number; hash: string; expiresAt: Date; type: 'magic_link' | 'password_reset' }): Promise<void> {
         await database.execute(
-            `INSERT INTO auth_token (idUser, hash, expires_at) VALUES (?, ?, ?)`,
-            [data.idUser, data.hash, data.expiresAt]
+            `INSERT INTO auth_token (idUser, hash, type, expires_at) VALUES (?, ?, ?, ?)`,
+            [data.idUser, data.hash, data.type, data.expiresAt]
         );
     }
 
-    async function findByHash(hash: string): Promise<AuthTokenData | null> {
+    async function findByHash(hash: string, type: 'magic_link' | 'password_reset'): Promise<AuthTokenData | null> {
         const rows = await database.execute<AuthTokenData[]>(
-            `SELECT id, idUser, hash, expires_at FROM auth_token WHERE hash = ? LIMIT 1`,
-            [hash]
+            `SELECT id, idUser, hash, type, expires_at FROM auth_token WHERE hash = ? AND type = ? LIMIT 1`,
+            [hash, type]
         );
         return rows[0] ?? null;
     }

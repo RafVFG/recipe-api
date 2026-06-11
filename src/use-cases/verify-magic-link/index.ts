@@ -9,7 +9,7 @@ export function verifyMagicLink(
     async function run(rawToken: string): Promise<{ jwt: string }> {
         const hash = crypto.createHash("sha256").update(rawToken).digest("hex");
 
-        const tokenData = await authTokenRepository.findByHash(hash);
+        const tokenData = await authTokenRepository.findByHash(hash, 'magic_link');
 
         if (!tokenData) {
             throw new Error("Token inválido");
